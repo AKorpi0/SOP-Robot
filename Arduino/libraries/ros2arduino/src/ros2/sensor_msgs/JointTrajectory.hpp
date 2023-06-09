@@ -13,7 +13,7 @@ class JointTrajectory : public ros2::Topic<JointTrajectory>
 {
 public: 
     std_msgs::Header header;
-    char joint_names[4][32];
+    char joint_names[8][32];
     sensor_msgs::JointTrajectoryPoint point;
 
   JointTrajectory():
