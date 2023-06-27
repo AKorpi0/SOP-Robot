@@ -53,7 +53,7 @@ class ShoulderController(Node):
         self.send_goal(command)
 
     def send_goal(self, action):
-        goal_msg = JointTrajectory
+        goal_msg = JointTrajectory()
         goal_msg.joint_names = ["r_shoulder_lift_joint", "r_shoulder_out_joint", "r_upper_arm_roll_joint", "r_elbow_flex_joint",
         "l_shoulder_lift_joint", "l_shoulder_out_joint", "l_upper_arm_roll_joint", "l_elbow_flex_joint"]
         point = JointTrajectoryPoint()
@@ -61,7 +61,7 @@ class ShoulderController(Node):
         dur = Duration()
         dur.sec = 1
         point.time_from_start = dur
-        goal_msg.points = point
+        goal_msg.points = [point]
 
         self.logger.info(f"Sending request")
         print(type(goal_msg))

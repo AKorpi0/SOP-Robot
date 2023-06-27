@@ -1,63 +1,50 @@
-#include <ros2arduino.h>
 #include <Servo.h>
+#include <Arduino.h>
 
-#ifndef LED_BUILTIN // To support some boards (eg. some esp32 boards)
-#define LED_BUILTIN 13
-#endif 
+const int NUM_SERVOS = 8;
+const int SERVO_PINS[NUM_SERVOS] = {6, 7, 8, 9, 10, 11, 12, 13};
 
-#define XRCEDDS_PORT  Serial 
+Servo servos[NUM_SERVOS];
 
-Servo r_shoulder_lift;
-Servo r_upper_arm_roll;
-Servo r_elbow_flex;
-Servo r_shoulder_out;
-Servo l_shoulder_lift;
-Servo l_upper_arm_roll;
-Servo l_elbow_flex;
-Servo l_shoulder_out;
+void setup() {
+  Serial.begin(115200);
 
-void subscribeArm(sensor_msgs::JointTrajectory* msg, void* arg)
-{
-  (void)(arg);
-  r_shoulder_lift.write(msg.point[0])
-  r_upper_arm_roll.write(msg.point[1])
-  r_elbow_flex.write(msg.point[2])
-  r_shoulder_out.write(msg.point[3])
-  l_shoulder_lift.write(msg.point[4])
-  l_upper_arm_roll.write(msg.point[5])
-  l_elbow_flex.write(msg.point[6])
-  l_shoulder_out.write(msg.point[7])
-}
-
-class ArmSub : public ros2::Node
-{
-public:
-  ArmSub()
-  : Node("ros2arduino_sub_node")
-  {
-    this->createSubscriber<sensor_msgs::JointTrajectory>("/shoulder_controller/joint_trajectory", (ros2::CallbackFunc)subscribeArm, nullptr);
+  // Attach servos to pins
+  for (int i = 0; i < NUM_SERVOS; ++i) {
+    servos[i].attach(SERVO_PINS[i]);
   }
-};
-
-void setup() 
-{
-  XRCEDDS_PORT.begin(115200);
-  while (!XRCEDDS_PORT); 
-
-  ros2::init(&XRCEDDS_PORT);
-  r_shoulder_lift.attach(13)
-  r_upper_arm_roll.attach(12)
-  r_elbow_flex.attach(11)
-  r_shoulder_out.attach(10)
-  l_shoulder_lift.attach(9)
-  l_upper_arm_roll.attach(8)
-  l_elbow_flex.attach(7)
-  l_shoulder_out.attach(6)
 }
 
-void loop() 
-{
-  static ArmSub ArmNode;
+void loop() {
+  if (Serial.available() > 0) {
+    String command = Serial.readStringUntil('\n');
 
-  ros2::spin(&ArmNode);
+    // Split the received command by commas
+    int angles[NUM_SERVOS];
+    int angleIndex = 0;
+    int start = 0;
+    int end = command.indexOf(',');
+
+    while (end != -1) {
+      angles[angleIndex++] = command.substring(start, end).toInt();
+      start = end + 1;
+      end = command.indexOf(',', start);
+    }
+    angles[angleIndex] = command.substring(start).toInt();
+
+    // Set angles for each servo
+    for (int i = 0; i < NUM_SERVOS; ++i) {
+      servos[i].write(angles[i]);
+    }
+
+    // Send back the received angles
+    Serial.print("Received angles: ");
+    for (int i = 0; i < NUM_SERVOS; ++i) {
+      Serial.print(angles[i]);
+      if (i < NUM_SERVOS - 1) {
+        Serial.print(",");
+      }
+    }
+    Serial.println();
+  }
 }
